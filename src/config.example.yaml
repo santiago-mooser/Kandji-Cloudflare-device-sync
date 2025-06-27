@@ -1,0 +1,90 @@
+# Kandji-Cloudflare Integration Configuration Example
+# Copy this file to config.yaml and update with your actual values
+
+# How often to run the sync process (e.g., 5m, 1h, 30s)
+sync_interval: 5m
+
+# on_missing configures what to do if a device is missing in Kandji but exists in Cloudflare
+# Options: "ignore", "delete", "alert"
+# "ignore" will leave the device in Cloudflare without changes
+# "delete" will remove the device from Cloudflare if it is not found in Kandji
+# "alert" will log an alert but leave the device in Cloudflare
+# Default is "ignore" to prevent accidental deletions
+on_missing: "delete"
+
+# Rate limiting settings to prevent overwhelming APIs
+rate_limits:
+  # Maximum Kandji API requests per second
+  kandji_requests_per_second: 10
+  # Maximum Cloudflare API requests per second (Cloudflare has stricter limits)
+  cloudflare_requests_per_second: 4
+  # Burst capacity for both APIs
+  burst_capacity: 5
+
+# Batch processing settings for bulk operations
+batch:
+  # Number of devices to process in each batch
+  size: 50
+
+# Kandji API Configuration
+kandji:
+  # Your Kandji instance API URL (replace 'your-tenant' with your actual tenant name)
+  api_url: "https://YOUR_TENANT.api.kandji.io"
+  # Your Kandji API Token - NEVER commit real tokens to version control
+  # Set this via environment variable KANDJI_API_TOKEN instead for security
+  # Generate at: Kandji Admin Portal > Settings > API Token
+  api_token: "DONTxxxx-USEx-MExx-NOTx-SAFExxxxxxxx"
+
+  # Blueprint filters. Expecting strings:
+  # blueprints_include:
+  #   blueprint_ids: ["xxxx-xxxxx-xxxx-xxx"]
+  #   blueprint_names: ["my_blueprint", "Production blueprint"]
+  blueprints_include:
+    blueprint_ids: []
+    blueprint_names: []
+  blueprints_exclude:
+    blueprint_ids: []
+    blueprint_names: []
+
+  # Sync settings for devices without owners
+  # If true, devices without owners in Kandji will be synced to Cloudflare
+  # If false, these devices will be ignored
+  sync_mobile_devices: false
+  sync_devices_without_owners: false
+
+  # Devices that are tagged with these tags will be included in the sync
+  # If include_tags is empty, all devices will be included
+  # If exclude_tags is not empty, devices with these tags will be excluded
+  # Note: Tags are case-sensitive
+  include_tags: []
+  exclude_tags: []
+
+
+# Cloudflare Configuration
+cloudflare:
+  # Other cloudflare lists from which to pull devices. Must be SERIAL lists.
+  # Parameter expects list of strings:
+  # source_list_ids: ["xxxxxxxxx", "yyyyyyyy"]
+  source_list_ids: []
+  # Your Cloudflare API Token with List:Edit permissions
+  # Generate at: Cloudflare Dashboard > My Profile > API Tokens
+  # Set this via environment variable CLOUDFLARE_API_TOKEN instead for security
+  api_token: "xxxxxxxxxxxxxxx"
+  # Your Cloudflare Account ID (found in dashboard sidebar)
+  # Set this via environment variable CLOUDFLARE_ACCOUNT_ID instead for security
+  account_id: "xxxxxxxxxxxxx"
+  # The ID of the Cloudflare list to manage device serial numbers
+  # Create a list in Zero Trust > Lists, then use its ID here
+  # Set this via environment variable CLOUDFLARE_LIST_ID instead for security
+  target_list_id: "xxxxxxxxxxxxxxx"
+
+# Logging Configuration
+log:
+  # Log level: debug, info, warn, error
+  level: "debug"
+
+# Example Zero Trust Rule Usage:
+# 1. Go to Zero Trust > Gateway > Firewall policies
+# 2. Create a new policy with condition: "Device Serial Number is in [YOUR_LIST_NAME]"
+# 3. Set action to "Allow" for managed devices
+# 4. Devices synced from Kandji will automatically be allowed through WARP

@@ -1,0 +1,31 @@
+version: 1
+
+# (Optional) List of env variables used during compilation.
+env:
+  - CGO_ENABLED=0
+
+# The OS to compile for. `GOOS` env variable will be set to this value.
+goos: linux
+
+# The architecture to compile for. `GOARCH` env variable will be set to this value.
+goarch: arm64
+
+# (Optional) Entrypoint to compile.
+# main: ./path/to/main.go
+
+# (Optional) Working directory. (default: root of the project)
+dir: ./src
+
+# Binary output name.
+# {{ .Os }} will be replaced by goos field in the config file.
+# {{ .Arch }} will be replaced by goarch field in the config file.
+binary: cloudflare-kandji-device-sync-{{ .Os }}-{{ .Arch }}
+
+# (Optional) ldflags generated dynamically in the workflow, and set as the `evaluated-envs` input variables in the workflow.
+ldflags:
+  - "-w"
+  - "-s"
+  - "-X main.Version={{ .Env.VERSION }}"
+  - "-X main.Commit={{ .Env.COMMIT }}"
+  - "-X main.CommitDate={{ .Env.COMMIT_DATE }}"
+  - "-X main.TreeState={{ .Env.TREE_STATE }}"
