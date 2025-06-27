@@ -232,12 +232,20 @@ func (s *Syncer) Sync(ctx context.Context) {
 		}
 	}
 
-	// For source lists, add serials with the source list description as comment
+	/*
+	   Optimization: Avoid repeated API calls for source lists by caching items.
+	*/
+	sourceListItemsCache := make(map[string][]cloudflare.GatewayListItem)
 	for _, sourceListID := range s.config.Cloudflare.SourceListIDs {
 		items, err := s.cloudflareClient.GetListItemsByID(ctx, sourceListID)
-		if err != nil {
-			continue
+		if err == nil {
+			sourceListItemsCache[sourceListID] = items
 		}
+	}
+
+	// For source lists, add serials with the source list description as comment
+	for _, sourceListID := range s.config.Cloudflare.SourceListIDs {
+		items := sourceListItemsCache[sourceListID]
 		desc := sourceListDescriptions[sourceListID]
 		for _, item := range items {
 			if _, exists := targetSerialSet[item.Value]; !exists {
@@ -297,51 +305,4 @@ func (s *Syncer) deviceHasAnyTag(device kandji.Device, includeTags []string) boo
 		}
 	}
 	return false
-}
-
-// handleMissingDevices processes devices that are in Cloudflare but missing from Kandji
-func (s *Syncer) handleMissingDevices(ctx context.Context, devicesToDeleteFromCloudflare []string) {
-	switch s.config.OnMissing {
-	case "alert":
-		s.log.Warn("Devices found in Cloudflare list but missing from Kandji",
-			"count", len(devicesToDeleteFromCloudflare),
-			"action", "alert_only")
-		for _, serial := range devicesToDeleteFromCloudflare {
-			s.log.Warn("Missing device", "serial_number", serial)
-		}
-
-	case "delete":
-		s.log.Info("Deleting devices in Cloudflare list that are not present in Kandji",
-			"count", len(devicesToDeleteFromCloudflare),
-			"batch_size", s.config.Batch.Size)
-
-		result, err := s.cloudflareClient.DeleteDevices(ctx, devicesToDeleteFromCloudflare, s.config.Batch.Size)
-		if err != nil {
-			s.log.Error("Failed to delete missing devices", "error", err)
-			return
-		}
-
-		// Log deletion results
-		s.log.Info("Bulk device deletion completed",
-			"success_count", result.SuccessCount,
-			"failed_count", len(result.FailedDevices),
-			"error_count", len(result.Errors))
-
-		// Log individual failures for debugging
-		for _, failedDevice := range result.FailedDevices {
-			s.log.Error("Failed to delete device",
-				"serial_number", failedDevice.SerialNumber,
-				"error", failedDevice.Error)
-		}
-
-		// Log general errors
-		for _, generalError := range result.Errors {
-
-			s.log.Error("Bulk deletion error", "error", generalError)
-		}
-
-	default:
-		// This should never happen due to config validation, but log just in case
-		s.log.Error("Unknown on_missing action", "action", s.config.OnMissing)
-	}
 }

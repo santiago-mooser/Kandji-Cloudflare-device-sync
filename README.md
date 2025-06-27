@@ -71,7 +71,7 @@ export CLOUDFLARE_LIST_ID="your-cloudflare-list-id"
 
 1. Go to Zero Trust Dashboard > Lists
 2. Click "Create list"
-3. Choose "Generic" list type
+3. Choose **SERIAL** list type (not "Generic") for device serial numbers
 4. Name it (e.g., "Kandji Managed Devices")
 5. Copy the List ID for your configuration
 
@@ -96,11 +96,14 @@ export CLOUDFLARE_LIST_ID="your-cloudflare-list-id"
 - `include_tags`: Only sync devices with these tags (empty = all devices)
 - `exclude_tags`: Skip devices with these tags
 - Platform filtering: Automatically excludes iPhone and iPad devices
+- `blueprints_include` / `blueprints_exclude`: Filter devices by Kandji blueprint IDs or names
+- `sync_mobile_devices`: If true, syncs mobile devices (default: false)
 
 ### Performance Tuning
 
 - `rate_limits`: Configure API request rates
 - `batch.size`: Number of devices per batch operation
+- `sync_interval`: How often to run the sync process (e.g., 5m, 1h, 30s)
 
 ## Usage
 
@@ -109,6 +112,9 @@ export CLOUDFLARE_LIST_ID="your-cloudflare-list-id"
 ```bash
 ./kandji-cloudflare-syncer
 ```
+
+- By default, the app loads `config.yaml` from the current directory.
+- You can override config file location with `-config` flag.
 
 ### With Custom Config
 
@@ -269,7 +275,7 @@ rate_limits.cloudflare_requests_per_second: 2
 
 ## License
 
-[Include appropriate license information]
+See [LICENSE](LICENSE) for details.
 
 ## Support
 

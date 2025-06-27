@@ -199,7 +199,6 @@ func (c *Client) GetDevices(ctx context.Context) ([]Device, error) {
 		// Try to parse as paginated response first
 		var paginatedResp DevicesResponse
 		if err := json.Unmarshal(body, &paginatedResp); err == nil {
-			// No need to process devices here since UnmarshalJSON handles user extraction
 			allDevices = append(allDevices, paginatedResp.Results...)
 			if paginatedResp.Next != nil {
 				nextURL = *paginatedResp.Next
@@ -210,11 +209,9 @@ func (c *Client) GetDevices(ctx context.Context) ([]Device, error) {
 			// Fallback: try to parse as direct array
 			var devices []Device
 			if err := json.Unmarshal(body, &devices); err != nil {
-				// print more details about the error
 				fmt.Printf("Error details: %s\n", string(body))
 				return nil, fmt.Errorf("failed to unmarshal Kandji devices JSON: %w", err)
 			}
-			// No need to process devices here since UnmarshalJSON handles user extraction
 			allDevices = append(allDevices, devices...)
 			nextURL = ""
 		}

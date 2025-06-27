@@ -42,6 +42,6 @@ LABEL go_version=1.23.2 \
 
 WORKDIR /app
 COPY --from=builder \
-     /src/cloudflare-kandji-device-sync .
+    /src/cloudflare-kandji-device-sync .
 
 CMD [ "/app/cloudflare-kandji-device-sync" ]
