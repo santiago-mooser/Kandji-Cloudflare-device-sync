@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kandji-cloudflare-syncer.fullname" . }}
+  labels:
+    {{- include "kandji-cloudflare-syncer.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "kandji-cloudflare-syncer.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "kandji-cloudflare-syncer.selectorLabels" . | nindent 8 }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      {{- end }}
+    spec:
+      serviceAccountName: {{ include "kandji-cloudflare-syncer.serviceAccountName" . }}
+      {{- if .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.args }}
+          args:
+            {{- range .Values.args }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.env.LOG_LEVEL | quote }}
+            - name: SYNC_INTERVAL
+              value: {{ .Values.env.SYNC_INTERVAL | quote }}
+            - name: ON_MISSING
+              value: {{ .Values.env.ON_MISSING | quote }}
+            - name: KANDJI_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kandji-cloudflare-syncer.fullname" . }}-secrets
+                  key: KANDJI_API_TOKEN
+            - name: CLOUDFLARE_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "kandji-cloudflare-syncer.fullname" . }}-secrets
+                  key: CLOUDFLARE_API_TOKEN
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          {{- if .Values.resources }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "kandji-cloudflare-syncer.fullname" . }}-config

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kandji-cloudflare-syncer
+description: A Helm chart for deploying the Kandji-Cloudflare Device Syncer
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

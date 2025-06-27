@@ -1,0 +1,70 @@
+replicaCount: 1
+
+image:
+  repository: kandji-cloudflare-syncer
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: false
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+
+securityContext: {}
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+env:
+  LOG_LEVEL: info
+  SYNC_INTERVAL: 10m
+  ON_MISSING: ignore
+
+config:
+  # Example config.yaml content (YAML as string, will be mounted as a ConfigMap)
+  enabled: true
+  data: |
+    sync_interval: 10m
+    on_missing: ignore
+    kandji:
+      api_url: ""
+      sync_devices_without_owners: false
+      sync_mobile_devices: false
+      include_tags: []
+      exclude_tags: []
+      blueprints_include:
+        blueprint_ids: []
+        blueprint_names: []
+      blueprints_exclude:
+        blueprint_ids: []
+        blueprint_names: []
+    cloudflare:
+      source_list_ids: []
+      target_list_id: ""
+    rate_limits:
+      kandji_requests_per_second: 10
+      cloudflare_requests_per_second: 4
+      burst_capacity: 5
+    batch:
+      size: 50
+      max_concurrent_batches: 3
+    log:
+      level: info
+
+secretEnv:
+  KANDJI_API_TOKEN: ""
+  CLOUDFLARE_API_TOKEN: ""
+  CLOUDFLARE_ACCOUNT_ID: ""
+
+args: []
