@@ -1,2 +1,3 @@
 config.yaml
-cloudflare-kandji-device-sync
+kandji-cloudflare-device-sync
+.DS_Store

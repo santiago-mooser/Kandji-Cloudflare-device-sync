@@ -4,6 +4,31 @@ A service that automatically synchronizes device information from Kandji to Clou
 
 ## Overview
 
+```mermaid
+flowchart LR
+    Kandji["Kandji MDM"]
+    CFSource1["Cloudflare Source List 1"]
+    CFSource2["Cloudflare Source List 2"]
+    CFSourceN["Cloudflare Source List N"]
+    Merge["Device Syncer"]
+    TargetList["Cloudflare Target<br>Device List"]
+    Policy["Zero Trust Policy<br/>(Gateway/WARP)"]
+
+    Kandji -- Device Data --> Merge
+    CFSource1 -- Serial Numbers --> Merge
+    CFSource2 -- Serial Numbers --> Merge
+    CFSourceN -- Serial Numbers --> Merge
+    Merge -- Merged & filtered lists --> TargetList
+    TargetList -- Used by --> Policy
+
+    classDef source fill:#e3f2fd,stroke:#2196f3,stroke-width:2px;
+    classDef process fill:#fffde7,stroke:#fbc02d,stroke-width:2px;
+    classDef target fill:#e8f5e9,stroke:#43a047,stroke-width:2px;
+    classDef policy fill:#fce4ec,stroke:#d81b60,stroke-width:2px;
+```
+
+*Device serial numbers are synced from Kandji and multiple Cloudflare source lists, merged and filtered, then pushed to the target Cloudflare Device List for Zero Trust policies.*
+
 This syncer pulls device serial numbers from your Kandji MDM and maintains them in a Cloudflare list that can be used for Zero Trust policies. This enables you to:
 
 - Automatically whitelist managed devices in Cloudflare Gateway

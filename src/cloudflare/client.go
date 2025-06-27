@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"cloudflare-kandji-device-sync/config"
-	"cloudflare-kandji-device-sync/internal/ratelimit"
+	"kandji-cloudflare-device-sync/config"
+	"kandji-cloudflare-device-sync/internal/ratelimit"
 )
 
 const (
@@ -381,24 +381,22 @@ func (c *Client) GetListItems(ctx context.Context) ([]string, error) {
 }
 
 /*
-AppendDevicesWithDescription adds new devices to the Cloudflare Gateway list (does not replace),
-and sets the list description.
-This uses PATCH /accounts/{account_id}/gateway/lists/{list_id} with "append" and "description".
+AppendDevices adds new devices to the Cloudflare Gateway list (does not replace).
+This uses PATCH /accounts/{account_id}/gateway/lists/{list_id} with only "append".
 */
-func (c *Client) AppendDevicesWithDescription(ctx context.Context, items []GatewayListItemCreateRequest, batchSize int, description string) error {
+func (c *Client) AppendDevices(ctx context.Context, items []GatewayListItemCreateRequest, batchSize int) error {
 	if len(items) == 0 {
 		return nil
 	}
 
-	c.log.Info("Appending devices to Cloudflare Gateway list", "count", len(items), "description", description)
+	c.log.Info("Appending devices to Cloudflare Gateway list", "count", len(items))
 
 	requestBody := GatewayListItemsCreateRequest{
-		Append:      items,
-		Description: description,
+		Append: items,
 	}
 
 	url := fmt.Sprintf("%s/accounts/%s/gateway/lists/%s", cloudflareAPIBaseV4, c.accountID, c.listID)
-	c.log.Debug("Cloudflare PATCH Request (append+description)", "url", url, "payload", requestBody)
+	c.log.Debug("Cloudflare PATCH Request (append)", "url", url, "payload", requestBody)
 
 	jsonBody, err := json.Marshal(requestBody)
 	if err != nil {

@@ -2,18 +2,17 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"cloudflare-kandji-device-sync/cloudflare"
-	"cloudflare-kandji-device-sync/config"
-	"cloudflare-kandji-device-sync/internal/ratelimit"
-	"cloudflare-kandji-device-sync/kandji"
-	"cloudflare-kandji-device-sync/syncer"
+	"kandji-cloudflare-device-sync/cloudflare"
+	"kandji-cloudflare-device-sync/config"
+	"kandji-cloudflare-device-sync/internal/ratelimit"
+	"kandji-cloudflare-device-sync/kandji"
+	"kandji-cloudflare-device-sync/syncer"
 )
 
 var (
@@ -23,22 +22,21 @@ var (
 	TreeState  = "n/a"
 )
 
-func printVersion() {
-	showVersion := flag.Bool("version", false, "show version")
-	flag.Parse()
-	if *showVersion {
+func main() {
+	showVersion := false
+	for _, arg := range os.Args[1:] {
+		if arg == "-version" || arg == "--version" {
+			showVersion = true
+			break
+		}
+	}
+	if showVersion {
 		fmt.Printf("%s, %s, %s, %s\n", Version, Commit, CommitDate, TreeState)
 		os.Exit(0)
 	}
-}
 
-func main() {
-	printVersion()
-
-	// Load configuration first to get log level
-	cfg, err := config.LoadConfig()
+	cfg, err := config.ParseConfig()
 	if err != nil {
-		// Use default logger for this error since we don't have config yet
 		slog.Error("Failed to load configuration", "error", err)
 		os.Exit(1)
 	}
@@ -79,6 +77,16 @@ func main() {
 	if err := cloudflareClient.ValidateListExists(context.Background()); err != nil {
 		log.Error("Failed to validate Cloudflare list! This likely means you don't have access to the list or the list ID is wrong.", "error", err)
 		os.Exit(1)
+	}
+
+	// Debug: List devices already in the target Cloudflare list
+	if logLevel == slog.LevelDebug {
+		targetSerials, err := cloudflareClient.GetListItems(context.Background())
+		if err != nil {
+			log.Error("Failed to fetch devices from target Cloudflare list", "error", err)
+		} else {
+			log.Debug("Devices already in target Cloudflare list", "count", len(targetSerials), "serials", targetSerials)
+		}
 	}
 
 	// Create and start the syncer

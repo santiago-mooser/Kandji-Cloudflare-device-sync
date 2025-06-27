@@ -1,4 +1,4 @@
-module cloudflare-kandji-device-sync
+module kandji-cloudflare-device-sync
 
 go 1.23.10
 

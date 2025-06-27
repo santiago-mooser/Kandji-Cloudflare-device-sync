@@ -2,13 +2,12 @@ package syncer
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
-	"cloudflare-kandji-device-sync/cloudflare"
-	"cloudflare-kandji-device-sync/config"
-	"cloudflare-kandji-device-sync/kandji"
+	"kandji-cloudflare-device-sync/cloudflare"
+	"kandji-cloudflare-device-sync/config"
+	"kandji-cloudflare-device-sync/kandji"
 )
 
 // Syncer orchestrates the synchronization from Kandji to Cloudflare.
@@ -260,26 +259,44 @@ func (s *Syncer) Sync(ctx context.Context) {
 	s.log.Info("Total new devices to add to target Cloudflare list", "count", len(toAdd))
 
 	if len(toAdd) > 0 {
-		var cfDevices []cloudflare.GatewayListItemCreateRequest
+		// Defensive deduplication: filter out any serials already in the target list
+		deduped := make([]deviceWithComment, 0, len(toAdd))
+		intersection := make([]string, 0)
 		for _, d := range toAdd {
+			if _, exists := targetSerialSet[d.SerialNumber]; !exists {
+				deduped = append(deduped, d)
+			} else {
+				intersection = append(intersection, d.SerialNumber)
+			}
+		}
+		if len(intersection) > 0 {
+			s.log.Warn("Deduplication: serials to be appended already exist in target list", "count", len(intersection), "serials", intersection)
+		}
+		if len(deduped) == 0 {
+			s.log.Info("No new devices to add after deduplication")
+			return
+		}
+
+		var cfDevices []cloudflare.GatewayListItemCreateRequest
+		serialSeen := make(map[string]struct{})
+		duplicates := make([]string, 0)
+		for _, d := range deduped {
+			if _, exists := serialSeen[d.SerialNumber]; exists {
+				duplicates = append(duplicates, d.SerialNumber)
+				continue
+			}
+			serialSeen[d.SerialNumber] = struct{}{}
 			cfDevices = append(cfDevices, cloudflare.GatewayListItemCreateRequest{
 				Value:   d.SerialNumber,
 				Comment: d.Comment,
 			})
 		}
-
-		// Compose a merged description for the target list
-		var mergedDesc string
-		if len(sourceListDescriptions) > 0 {
-			mergedDesc = "Merged from Kandji and source lists: "
-			for listID, desc := range sourceListDescriptions {
-				mergedDesc += fmt.Sprintf("[%s: %s] ", listID, desc)
-			}
-		} else {
-			mergedDesc = "Merged from Kandji"
+		if len(duplicates) > 0 {
+			s.log.Warn("Deduplication: duplicate serials skipped in PATCH payload", "count", len(duplicates), "serials", duplicates)
 		}
 
-		err := s.cloudflareClient.AppendDevicesWithDescription(ctx, cfDevices, s.config.Batch.Size, mergedDesc)
+		s.log.Debug("PATCH append payload", "count", len(cfDevices), "serials", cfDevices)
+		err := s.cloudflareClient.AppendDevices(ctx, cfDevices, s.config.Batch.Size)
 		if err != nil {
 			s.log.Error("Failed to process device batch", "error", err)
 			return

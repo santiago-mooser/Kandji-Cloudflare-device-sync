@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"cloudflare-kandji-device-sync/config"
-	"cloudflare-kandji-device-sync/internal/ratelimit"
+	"kandji-cloudflare-device-sync/config"
+	"kandji-cloudflare-device-sync/internal/ratelimit"
 )
 
 // User represents the user information from the Kandji API.
@@ -178,7 +178,7 @@ func (c *Client) GetDevices(ctx context.Context) ([]Device, error) {
 
 		req.Header.Set("Authorization", "Bearer "+c.apiToken)
 		req.Header.Set("Accept", "application/json")
-		req.Header.Set("User-Agent", "cloudflare-kandji-device-sync/1.0")
+		req.Header.Set("User-Agent", "kandji-cloudflare-device-sync/1.0")
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
