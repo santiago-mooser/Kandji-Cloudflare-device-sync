@@ -56,6 +56,8 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 		DeviceID       string      `json:"device_id"`
 		MacAddress     string      `json:"mac_address"`
 		Tags           []string    `json:"tags"`
+		BlueprintID    string      `json:"blueprint_id"`
+		BlueprintName  string      `json:"blueprint_name"`
 	}
 
 	var temp TempDevice
@@ -75,6 +77,8 @@ func (d *Device) UnmarshalJSON(data []byte) error {
 	d.DeviceID = temp.DeviceID
 	d.MacAddress = temp.MacAddress
 	d.Tags = temp.Tags
+	d.BlueprintID = temp.BlueprintID
+	d.BlueprintName = temp.BlueprintName
 
 	// Handle the user field based on its type
 	if temp.User != nil {
@@ -125,13 +129,13 @@ type Client struct {
 func NewClient(cfg config.KandjiConfig, rateLimiter *ratelimit.Limiter) (*Client, error) {
 	// Validate the API URL and token
 	if cfg.ApiURL == "" {
-		return nil, fmt.Errorf("Kandji API URL is required")
+		return nil, fmt.Errorf("kandji api url is required")
 	}
 	if cfg.ApiToken == "" {
-		return nil, fmt.Errorf("Kandji API token is required")
+		return nil, fmt.Errorf("kandji api token is required")
 	}
 	if !strings.HasPrefix(cfg.ApiURL, "https://") {
-		return nil, fmt.Errorf("Kandji API URL must start with https://")
+		return nil, fmt.Errorf("kandji api url must start with https://")
 	}
 
 	return &Client{
