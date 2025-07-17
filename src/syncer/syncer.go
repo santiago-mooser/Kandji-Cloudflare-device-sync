@@ -91,57 +91,18 @@ func (s *Syncer) Sync(ctx context.Context) {
 			continue
 		}
 
-		// Blueprint include filter
-		includeBlueprints := s.config.Kandji.BlueprintsInclude
-		if len(includeBlueprints.BlueprintIDs) > 0 || len(includeBlueprints.BlueprintNames) > 0 {
-			matched := false
-			for _, id := range includeBlueprints.BlueprintIDs {
-				if device.BlueprintID == id {
-					matched = true
-					break
-				}
-			}
-			for _, name := range includeBlueprints.BlueprintNames {
-				if device.BlueprintName == name {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				continue
-			}
-		}
-
-		// Blueprint exclude filter
-		excludeBlueprints := s.config.Kandji.BlueprintsExclude
-		excluded := false
-		for _, id := range excludeBlueprints.BlueprintIDs {
-			if device.BlueprintID == id {
-				excluded = true
-				break
-			}
-		}
-		for _, name := range excludeBlueprints.BlueprintNames {
-			if device.BlueprintName == name {
-				excluded = true
-				break
-			}
-		}
-		if excluded {
+		// Blueprint filtering
+		if !s.deviceMatchesBlueprint(&device) {
 			continue
 		}
 
-		filteredKandjiSerials = append(filteredKandjiSerials, device.SerialNumber)
 		filteredKandjiDevices = append(filteredKandjiDevices, device)
 		s.log.Debug("Including device for sync", "serial_number", device.SerialNumber)
 	}
 	s.log.Info("Total new devices in Kandji that pass filters", "count", len(filteredKandjiDevices))
 
 	// 2. Fetch serials from all source Cloudflare lists
-	mergedSourceSerials := make(map[string]struct{})
-	for _, serial := range filteredKandjiSerials {
-		mergedSourceSerials[serial] = struct{}{}
-	}
+	mergedSourceSerials := createSet(filteredKandjiSerials)
 
 	sourceListDescriptions := make(map[string]string) // listID -> description
 
@@ -310,6 +271,59 @@ func (s *Syncer) Sync(ctx context.Context) {
 		"new_devices_found", len(toAdd),
 		"successfully_added", len(toAdd),
 		"deleted_devices", len(toRemove))
+}
+
+// createSet creates a set from a slice of strings for efficient lookups.
+func createSet(items []string) map[string]struct{} {
+	set := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		set[item] = struct{}{}
+	}
+	return set
+}
+
+// deviceMatchesBlueprint checks if a device matches the blueprint filters.
+func (s *Syncer) deviceMatchesBlueprint(device *kandji.Device) bool {
+	includeIDs := createSet(s.config.Kandji.BlueprintsInclude.BlueprintIDs)
+	includeNames := createSet(s.config.Kandji.BlueprintsInclude.BlueprintNames)
+	excludeIDs := createSet(s.config.Kandji.BlueprintsExclude.BlueprintIDs)
+	excludeNames := createSet(s.config.Kandji.BlueprintsExclude.BlueprintNames)
+
+	// Log device blueprint info for debugging
+	s.log.Debug("Checking device blueprint",
+		"serial_number", device.SerialNumber,
+		"device_blueprint_id", device.BlueprintID,
+		"device_blueprint_name", device.BlueprintName,
+		"include_ids", includeIDs,
+		"blueprint_names", includeNames)
+
+	// Exclude filter has priority
+	if _, ok := excludeIDs[device.BlueprintID]; ok {
+		s.log.Debug("Device excluded by blueprint ID", "serial_number", device.SerialNumber, "blueprint_id", device.BlueprintID)
+		return false
+	}
+	if _, ok := excludeNames[device.BlueprintName]; ok {
+		s.log.Debug("Device excluded by blueprint name", "serial_number", device.SerialNumber, "blueprint_name", device.BlueprintName)
+		return false
+	}
+
+	// If no include filters are set, all non-excluded devices are included.
+	if len(includeIDs) == 0 && len(includeNames) == 0 {
+		return true
+	}
+
+	// Include filter
+	if _, ok := includeIDs[device.BlueprintID]; ok {
+		s.log.Debug("Device included by blueprint ID", "serial_number", device.SerialNumber, "blueprint_id", device.BlueprintID)
+		return true
+	}
+	if _, ok := includeNames[device.BlueprintName]; ok {
+		s.log.Debug("Device included by blueprint name", "serial_number", device.SerialNumber, "blueprint_name", device.BlueprintName)
+		return true
+	}
+
+	s.log.Debug("Device did not match any include blueprint filters", "serial_number", device.SerialNumber, "device_blueprint_name", device.BlueprintName, "device_blueprint_id", device.BlueprintID, "include_ids", includeIDs, "blueprint_names", includeNames)
+	return false
 }
 
 // deviceHasAnyTag checks if a device has any of the specified tags
