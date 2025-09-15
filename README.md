@@ -118,11 +118,28 @@ export CLOUDFLARE_LIST_ID="your-cloudflare-list-id"
 
 ### Device Filtering
 
-- `include_tags`: Only sync devices with these tags (empty = all devices)
-- `exclude_tags`: Skip devices with these tags
-- Platform filtering: Automatically excludes iPhone and iPad devices
-- `blueprints_include` / `blueprints_exclude`: Filter devices by Kandji blueprint IDs or names
-- `sync_mobile_devices`: If true, syncs mobile devices (default: false)
+Use these settings to control which Kandji devices are synced:
+
+- `include_tags` / `exclude_tags`: Only sync devices with specific tags or skip those with excluded tags
+- `sync_devices_without_owners`: Include devices that have no assigned owner
+- `sync_mobile_devices`: Sync mobile devices (defaults to `false` to only sync computers)
+- `blueprints_include` / `blueprints_exclude`: Filter devices by blueprint IDs or names
+
+Example configuration:
+
+```yaml
+kandji:
+  include_tags: ["corp-managed"]
+  exclude_tags: ["do-not-sync"]
+  sync_devices_without_owners: true
+  sync_mobile_devices: false
+  blueprints_include:
+    blueprint_ids: ["abcd-1234"]
+    blueprint_names: ["Production"]
+  blueprints_exclude:
+    blueprint_ids: []
+    blueprint_names: ["Test"]
+```
 
 ### Performance Tuning
 
