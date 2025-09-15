@@ -186,16 +186,20 @@ func (c *Client) GetDevices(ctx context.Context) ([]Device, error) {
 
 		resp, err := c.httpClient.Do(req)
 		if err != nil {
+			if resp != nil {
+				resp.Body.Close()
+			}
 			return nil, fmt.Errorf("failed to execute Kandji API request: %w", err)
 		}
-		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(resp.Body)
+			resp.Body.Close()
 			return nil, fmt.Errorf("received non-200 status from Kandji API: %s, body: %s", resp.Status, string(body))
 		}
 
 		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
 		if err != nil {
 			return nil, fmt.Errorf("failed to read Kandji API response body: %w", err)
 		}
