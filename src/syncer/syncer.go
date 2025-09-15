@@ -97,6 +97,7 @@ func (s *Syncer) Sync(ctx context.Context) {
 		}
 
 		filteredKandjiDevices = append(filteredKandjiDevices, device)
+		filteredKandjiSerials = append(filteredKandjiSerials, device.SerialNumber)
 		s.log.Debug("Including device for sync", "serial_number", device.SerialNumber)
 	}
 	s.log.Info("Total new devices in Kandji that pass filters", "count", len(filteredKandjiDevices))
