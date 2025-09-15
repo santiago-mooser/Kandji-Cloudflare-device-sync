@@ -77,6 +77,7 @@ export KANDJI_API_TOKEN="your-kandji-api-token"
 export CLOUDFLARE_API_TOKEN="your-cloudflare-api-token"
 export CLOUDFLARE_ACCOUNT_ID="your-cloudflare-account-id"
 export CLOUDFLARE_LIST_ID="your-cloudflare-list-id"
+export LOG_LEVEL="info" # optional, defaults to "info"
 ```
 
 ## Cloudflare Setup
@@ -213,6 +214,8 @@ When combined with WARP clients:
 - `info`: General operational information
 - `warn`: Non-fatal issues
 - `error`: Error conditions
+
+The log level can be set via the `LOG_LEVEL` environment variable and defaults to `"info"`.
 
 ### Key Metrics
 

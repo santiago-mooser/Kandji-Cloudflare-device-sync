@@ -209,6 +209,11 @@ func ParseConfig() (*Config, error) {
 		cfg.Batch.MaxConcurrentBatches = *maxConcurrentBatches
 	}
 
+	// Set default log level if not specified
+	if cfg.Log.Level == "" {
+		cfg.Log.Level = "info"
+	}
+
 	// Set default sync interval if not specified
 	if cfg.SyncInterval == 0 {
 		cfg.SyncInterval = 5 * time.Minute
@@ -306,6 +311,11 @@ func LoadConfig() (*Config, error) {
 	}
 	if logLevel := os.Getenv("LOG_LEVEL"); logLevel != "" {
 		cfg.Log.Level = logLevel
+	}
+
+	// Set default log level if not specified
+	if cfg.Log.Level == "" {
+		cfg.Log.Level = "info"
 	}
 
 	// Set default sync interval if not specified
